@@ -1,0 +1,53 @@
+#initialise the ndc sound asset pack
+
+ndcassetpack = "/home/pi/Desktop/SOUND FINAL/soundassets" #initialise the ndc sound asset pack
+
+set :vol,0 #set initial volume
+
+live_loop :getVol do #get midi input control change 12
+  use_real_time
+  a,b = sync "/osc*/play_this"
+  if b > 0
+    set :vol, b*2.5 #if the osc value is 1, set the volume to 1
+  end
+  if b == 0
+    set :vol, 0 #if the osc value is 0, set the volume to 0
+  end
+  if a > 0
+    set :vol2, a*2.5 #if the osc value is 1, set the volume to 1
+  end
+  if a == 0
+    set :vol2, 0 #if the osc value is 0, set the volume to 0
+  end
+end
+
+live_loop :getVol22 do
+  with_fx :level, amp: 0 do |v| #use fz :level to adjust volume
+    set :vref,v #store reference to fx :level
+    
+    live_loop :setVolume do
+      control get(:vref),amp: get(:vol),amp_slide: 0.8
+      sleep 1
+    end
+    
+    live_loop :pl do #play some sound, volume controlled by fx :level
+      sample ndcassetpack, "editted",release: 5,  pan:1
+      sleep sample_duration ndcassetpack, "editted"
+    end
+  end #fx levels
+  
+  with_fx :level, amp: 0 do |k| #use fz :level to adjust volume
+    set :vref2,k #store reference to fx :level
+    
+    live_loop :setVolume2 do
+      control get(:vref2),amp: get(:vol2),amp_slide: 0.8
+      sleep 1
+    end
+    
+    live_loop : 
+pl2 do #play some sound, volume controlled by fx :level
+      sample ndcassetpack, "editted", release: 5, pan:-1
+      sleep sample_duration ndcassetpack, "editted"
+    end
+  end #fx levels
+end
